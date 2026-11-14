@@ -3,6 +3,13 @@
 手机 / 电脑双端的行测「资料分析」专项训练程序，纯前端、免安装、可离线。
 目标只有两个：**算得快** 和 **找得准**。
 
+## 在线版（推荐，手机直接用）
+
+**https://dyf9.github.io/xingce-trainer/**
+
+HTTPS 部署，iPhone Safari 打开后「分享 → 添加到主屏幕」，联网打开一次即可离线使用（Service Worker 已注册）。
+源码仓库：https://github.com/DYF9/xingce-trainer
+
 ## 电脑上打开
 
 双击 `index.html` 即可（Chrome / Edge / Firefox）。
