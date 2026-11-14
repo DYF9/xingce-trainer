@@ -1,5 +1,8 @@
 .tmp/
 node_modules/
+CON
+con
+
 xc-web.zip
 *.log
 .DS_Store
