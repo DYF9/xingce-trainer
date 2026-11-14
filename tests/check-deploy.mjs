@@ -1,0 +1,27 @@
+import { setTimeout as sleep } from 'node:timers/promises';
+const URLX = process.argv[2];
+const target = await (await fetch('http://127.0.0.1:9333/json/new?' + encodeURIComponent(URLX), { method: 'PUT' })).json();
+const ws = new WebSocket(target.webSocketDebuggerUrl);
+let id = 0; const pending = new Map(); const errs = []; const logs = [];
+ws.addEventListener('message', e => { const m = JSON.parse(e.data); if (m.id && pending.has(m.id)) { pending.get(m.id)(m); pending.delete(m.id); }
+  if (m.method === 'Runtime.exceptionThrown') errs.push(m.params.exceptionDetails.text + ' ' + ((m.params.exceptionDetails.exception||{}).description || ''));
+  if (m.method === 'Runtime.consoleAPICalled' && m.params.type === 'error') logs.push(m.params.args.map(a => a.value || a.description).join(' '));
+});
+await new Promise(r => ws.addEventListener('open', r));
+const send = (method, params) => { const i = ++id; return new Promise(res => { pending.set(i, res); ws.send(JSON.stringify({ id: i, method, params: params || {} })); }); };
+const ev = async (expr) => { const r = await send('Runtime.evaluate', { expression: expr, returnByValue: true, awaitPromise: true }); if (r.result.exceptionDetails) throw new Error('EVAL ' + expr); return r.result.result.value; };
+const clickSel = (s) => ev('document.querySelector(' + JSON.stringify(s) + ').click()');
+await send('Runtime.enable'); await send('Page.enable');
+await send('Page.navigate', { url: URLX });
+await sleep(1500);
+const modes = await ev('document.querySelectorAll(".mode").length');
+await clickSel('[data-mode="calc"]');
+await sleep(300);
+const opts = await ev('document.querySelectorAll(".opt").length');
+await ev('document.querySelectorAll(".opt")[0].click()');
+await clickSel('#submitBtn');
+await sleep(250);
+const fb = await ev('!!document.querySelector(".feedback")');
+const sw = await ev('"serviceWorker" in navigator');
+console.log(JSON.stringify({ url: URLX, modes, opts, feedback: fb, hasSW: sw, errs, logs }));
+ws.close(); process.exit(0);
